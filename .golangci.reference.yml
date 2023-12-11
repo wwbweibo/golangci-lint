@@ -205,6 +205,10 @@ linters-settings:
     rules:
       # Name of a rule.
       main:
+        # Used to determine the package matching priority.
+        # There are three different modes: `original`, `strict`, and `lax`.
+        # Default: "original"
+        list-mode: lax
         # List of file globs that will match this list of settings to compare against.
         # Default: $all
         files:
@@ -344,6 +348,9 @@ linters-settings:
     # Only run exhaustive check on map literals with "//exhaustive:enforce" comment.
     # Default: false
     explicit-exhaustive-map: true
+    # Switch statement requires default case even if exhaustive.
+    # Default: false
+    default-case-required: true
 
   exhaustivestruct:
     # Struct Patterns is list of expressions to match struct packages and names.
@@ -356,16 +363,18 @@ linters-settings:
       - 'example.com/package.ExampleStruct'
 
   exhaustruct:
-    # List of regular expressions to match struct packages and names.
+    # List of regular expressions to match struct packages and their names.
+    # Regular expressions must match complete canonical struct package/name/structname.
     # If this list is empty, all structs are tested.
     # Default: []
     include:
-      - '.*\.Test'
+      - '.+\.Test'
       - 'example\.com/package\.ExampleStruct[\d]{1,2}'
-    # List of regular expressions to exclude struct packages and names from check.
+    # List of regular expressions to exclude struct packages and their names from checks.
+    # Regular expressions must match complete canonical struct package/name/structname.
     # Default: []
     exclude:
-      - 'cobra\.Command$'
+      - '.+/cobra\.Command$'
 
   forbidigo:
     # Forbid the following identifiers (list of regexp).
@@ -456,6 +465,10 @@ linters-settings:
     # Default: false
     suppress-async-assertion: true
 
+    # Suppress warning for comparing values from different types, like int32 and uint32
+    # Default: false
+    suppress-type-compare-assertion: true
+
     # Trigger warning for ginkgo focus containers like FDescribe, FContext, FWhen or FIt
     # Default: false
     forbid-focus-container: true
@@ -494,6 +507,9 @@ linters-settings:
     # Ignore when constant is not used as function argument.
     # Default: true
     ignore-calls: false
+    # Exclude strings matching the given regular expression.
+    # Default: ""
+    ignore-strings: 'foo.+'
 
   gocritic:
     # Which checks should be enabled; can't be combined with 'disabled-checks'.
@@ -840,7 +856,7 @@ linters-settings:
       - G304 # File path provided as taint input
       - G305 # File traversal when extracting zip/tar archive
       - G306 # Poor file permissions used when writing to a new file
-      - G307 # Deferring a method which returns an error
+      - G307 # Poor file permissions used when creating a file with os.Create
       - G401 # Detect the usage of DES, RC4, MD5 or SHA1
       - G402 # Look for bad TLS connection settings
       - G403 # Ensure minimum RSA key length of 2048 bits
@@ -880,7 +896,7 @@ linters-settings:
       - G304 # File path provided as taint input
       - G305 # File traversal when extracting zip/tar archive
       - G306 # Poor file permissions used when writing to a new file
-      - G307 # Deferring a method which returns an error
+      - G307 # Poor file permissions used when creating a file with os.Create
       - G401 # Detect the usage of DES, RC4, MD5 or SHA1
       - G402 # Look for bad TLS connection settings
       - G403 # Ensure minimum RSA key length of 2048 bits
@@ -1040,24 +1056,33 @@ linters-settings:
         strict: true
       unusedresult:
         # Comma-separated list of functions whose results must be used
-        # (in addition to defaults context.WithCancel,context.WithDeadline,context.WithTimeout,context.WithValue,
-        # errors.New,fmt.Errorf,fmt.Sprint,fmt.Sprintf,sort.Reverse)
-        # Default []
+        # (in addition to default:
+        #   context.WithCancel, context.WithDeadline, context.WithTimeout, context.WithValue, errors.New, fmt.Errorf,
+        #   fmt.Sprint, fmt.Sprintf, sort.Reverse
+        # ).
+        # Default: []
         funcs:
           - pkg.MyFunc
         # Comma-separated list of names of methods of type func() string whose results must be used
         # (in addition to default Error,String)
-        # Default []
+        # Default: []
         stringmethods:
           - MyMethod
 
     # Disable all analyzers.
     # Default: false
     disable-all: true
-    # Enable analyzers by name (in addition to default).
+    # Enable analyzers by name.
+    # (in addition to default:
+    #   appends, asmdecl, assign, atomic, bools, buildtag, cgocall, composites, copylocks, defers, directive, errorsas,
+    #   framepointer, httpresponse, ifaceassert, loopclosure, lostcancel, nilfunc, printf, shift, sigchanyzer, slog,
+    #   stdmethods, stringintconv, structtag, testinggoroutine, tests, timeformat, unmarshal, unreachable, unsafeptr,
+    #   unusedresult
+    # ).
     # Run `go tool vet help` to see all analyzers.
     # Default: []
     enable:
+      - appends
       - asmdecl
       - assign
       - atomic
@@ -1102,9 +1127,14 @@ linters-settings:
     # Default: false
     enable-all: true
     # Disable analyzers by name.
+    # (in addition to default
+    #   atomicalign, deepequalerrors, fieldalignment, findcall, nilness, reflectvaluecompare, shadow, sortslice,
+    #   timeformat, unusedwrite
+    # ).
     # Run `go tool vet help` to see all analyzers.
     # Default: []
     disable:
+      - appends
       - asmdecl
       - assign
       - atomic
@@ -1269,6 +1299,7 @@ linters-settings:
       - k8s.io/klog/v2.InfoS   # package level exported functions
       - (github.com/go-logr/logr.Logger).Error  # "Methods"
       - (*go.uber.org/zap.SugaredLogger).With  # Also "Methods", but with a pointer receiver
+
   maintidx:
     # Show functions with maintainability index lower than N.
     # A high index indicates better maintainability (it's kind of the opposite of complexity).
@@ -1359,6 +1390,20 @@ linters-settings:
     # Default: false
     ignore-missing-subtests: true
 
+  perfsprint:
+    # Optimizes even if it requires an int or uint type cast.
+    # Default: true
+    int-conversion: false
+    # Optimizes into `err.Error()` even if it is only equivalent for non-nil errors.
+    # Default: false
+    err-error: true
+    # Optimizes `fmt.Errorf`.
+    # Default: true
+    errorf: false
+    # Optimizes `fmt.Sprintf` with only one argument
+    # Default: true
+    sprintf1: false
+
   prealloc:
     # IMPORTANT: we don't recommend using this linter before doing performance profiling.
     # For most programs usage of prealloc will be a premature optimization.
@@ -1397,6 +1442,22 @@ linters-settings:
       - ReservedChars
       - CamelCase
       - UnitAbbreviations
+
+  protogetter:
+    # Skip files generated by specified generators from the checking.
+    # Checks only the file's initial comment, which must follow the format: "// Code generated by <generator-name>".
+    # Files generated by protoc-gen-go, protoc-gen-go-grpc, and protoc-gen-grpc-gateway are always excluded automatically.
+    # Default: []
+    skip-generated-by: ["protoc-gen-go-my-own-generator"]
+    # Skip files matching the specified glob pattern from the checking.
+    # Default: []
+    skip-files:
+      - "*.pb.go"
+      - "*/vendor/*"
+      - "/full/path/to/file.go"
+    # Skip any generated files from the checking.
+    # Default: false
+    skip-any-generated: true
 
   reassign:
     # Patterns for global variable names that are checked for reassignment.
@@ -1793,6 +1854,30 @@ linters-settings:
     packages:
       - github.com/jmoiron/sqlx
 
+  sloglint:
+    # Enforce using key-value pairs only (incompatible with attr-only).
+    # Default: false
+    kv-only: true
+    # Enforce using attributes only (incompatible with kv-only).
+    # Default: false
+    attr-only: true
+    # Enforce using methods that accept a context.
+    # Default: false
+    context-only: true
+    # Enforce using static values for log messages.
+    # Default: false
+    static-msg: true
+    # Enforce using constants instead of raw keys.
+    # Default: false
+    no-raw-keys: true
+    # Enforce a single key naming convention.
+    # Values: snake, kebab, camel, pascal
+    # Default: ""
+    key-naming-case: snake
+    # Enforce putting arguments on separate lines.
+    # Default: false
+    args-on-sep-lines: true
+
   staticcheck:
     # Deprecated: use the global `run.go` instead.
     go: "1.15"
@@ -1881,6 +1966,67 @@ linters-settings:
     # Otherwise, only methods that take `*testing.T`, `*testing.B`, and `testing.TB` as arguments are checked.
     # Default: false
     all: false
+
+  testifylint:
+    # Enable all checkers (https://github.com/Antonboom/testifylint#checkers).
+    # Default: false
+    enable-all: true
+    # Disable checkers by name
+    # (in addition to default
+    #   suite-thelper
+    # ).
+    disable:
+      - bool-compare
+      - compares
+      - empty
+      - error-is-as
+      - error-nil
+      - expected-actual
+      - go-require
+      - float-compare
+      - len
+      - nil-compare
+      - require-error
+      - suite-dont-use-pkg
+      - suite-extra-assert-call
+      - suite-thelper
+
+    # Disable all checkers (https://github.com/Antonboom/testifylint#checkers).
+    # Default: false
+    disable-all: true
+    # Enable checkers by name
+    # (in addition to default
+    #   bool-compare, compares, empty, error-is-as, error-nil, expected-actual, go-require, float-compare, len,
+    #   nil-compare, require-error, suite-dont-use-pkg, suite-extra-assert-call
+    # ).
+    enable:
+      - bool-compare
+      - compares
+      - empty
+      - error-is-as
+      - error-nil
+      - expected-actual
+      - go-require
+      - float-compare
+      - len
+      - nil-compare
+      - require-error
+      - suite-dont-use-pkg
+      - suite-extra-assert-call
+      - suite-thelper
+
+    expected-actual:
+      # Regexp for expected variable name.
+      # Default: (^(exp(ected)?|want(ed)?)([A-Z]\w*)?$)|(^(\w*[a-z])?(Exp(ected)?|Want(ed)?)$)
+      pattern: ^expected
+    require-error:
+      # Regexp for assertions to analyze. If defined then only matched assertions will be reported.
+      # Default: ""
+      fn-pattern: ^(Errorf?|NoErrorf?)$
+    suite-extra-assert-call:
+      # To require or remove extra Assert() call?
+      # Default: remove
+      mode: require
 
   testpackage:
     # Regexp pattern to skip files.
@@ -1982,6 +2128,29 @@ linters-settings:
     #
     # Default: false
     check-exported: true
+
+  unused:
+    # Mark all struct fields that have been written to as used.
+    # Default: true
+    field-writes-are-uses: false
+    # Treat IncDec statement (e.g. `i++` or `i--`) as both read and write operation instead of just write.
+    # Default: false
+    post-statements-are-reads: true
+    # Mark all exported identifiers as used.
+    # Default: true
+    exported-is-used: false
+    # Mark all exported fields as used.
+    # default: true
+    exported-fields-are-used: false
+    # Mark all function parameters as used.
+    # default: true
+    parameters-are-used: false
+    # Mark all local variables as used.
+    # default: true
+    local-variables-are-used: false
+    # Mark all identifiers inside generated files as used.
+    # Default: true
+    generated-is-used: false
 
   varcheck:
     # Check usage of exported fields and variables.
@@ -2181,6 +2350,7 @@ linters:
     - gocheckcompilerdirectives
     - gochecknoglobals
     - gochecknoinits
+    - gochecksumtype
     - gocognit
     - goconst
     - gocritic
@@ -2204,6 +2374,7 @@ linters:
     - grouper
     - ifshort
     - importas
+    - inamedparam
     - ineffassign
     - interfacebloat
     - interfacer
@@ -2227,13 +2398,16 @@ linters:
     - nosnakecase
     - nosprintfhostport
     - paralleltest
+    - perfsprint
     - prealloc
     - predeclared
     - promlinter
+    - protogetter
     - reassign
     - revive
     - rowserrcheck
     - scopelint
+    - sloglint
     - sqlclosecheck
     - staticcheck
     - structcheck
@@ -2242,6 +2416,7 @@ linters:
     - tagliatelle
     - tenv
     - testableexamples
+    - testifylint
     - testpackage
     - thelper
     - tparallel
@@ -2295,6 +2470,7 @@ linters:
     - gocheckcompilerdirectives
     - gochecknoglobals
     - gochecknoinits
+    - gochecksumtype
     - gocognit
     - goconst
     - gocritic
@@ -2318,6 +2494,7 @@ linters:
     - grouper
     - ifshort
     - importas
+    - inamedparam
     - ineffassign
     - interfacebloat
     - interfacer
@@ -2341,13 +2518,16 @@ linters:
     - nosnakecase
     - nosprintfhostport
     - paralleltest
+    - perfsprint
     - prealloc
     - predeclared
     - promlinter
+    - protogetter
     - reassign
     - revive
     - rowserrcheck
     - scopelint
+    - sloglint
     - sqlclosecheck
     - staticcheck
     - structcheck
@@ -2356,6 +2536,7 @@ linters:
     - tagliatelle
     - tenv
     - testableexamples
+    - testifylint
     - testpackage
     - thelper
     - tparallel
