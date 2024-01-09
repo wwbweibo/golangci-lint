@@ -74,6 +74,9 @@ var defaultLintersSettings = LintersSettings{
 		MaxDeclLines: 1,
 		MaxDeclChars: 30,
 	},
+	Inamedparam: INamedParamSettings{
+		SkipSingleParam: false,
+	},
 	InterfaceBloat: InterfaceBloatSettings{
 		Max: 10,
 	},
@@ -120,6 +123,7 @@ var defaultLintersSettings = LintersSettings{
 		Qualified: false,
 	},
 	SlogLint: SlogLintSettings{
+		NoMixedArgs:    true,
 		KVOnly:         false,
 		AttrOnly:       false,
 		ContextOnly:    false,
@@ -215,6 +219,7 @@ type LintersSettings struct {
 	Grouper          GrouperSettings
 	Ifshort          IfshortSettings
 	ImportAs         ImportAsSettings
+	Inamedparam      INamedParamSettings
 	InterfaceBloat   InterfaceBloatSettings
 	Ireturn          IreturnSettings
 	Lll              LllSettings
@@ -240,13 +245,14 @@ type LintersSettings struct {
 	Revive           ReviveSettings
 	RowsErrCheck     RowsErrCheckSettings
 	SlogLint         SlogLintSettings
+	Spancheck        SpancheckSettings
 	Staticcheck      StaticCheckSettings
 	Structcheck      StructCheckSettings
 	Stylecheck       StaticCheckSettings
 	TagAlign         TagAlignSettings
 	Tagliatelle      TagliatelleSettings
-	Testifylint      TestifylintSettings
 	Tenv             TenvSettings
+	Testifylint      TestifylintSettings
 	Testpackage      TestpackageSettings
 	Thelper          ThelperSettings
 	Unparam          UnparamSettings
@@ -613,6 +619,10 @@ type ImportAsAlias struct {
 	Alias string
 }
 
+type INamedParamSettings struct {
+	SkipSingleParam bool `mapstructure:"skip-single-param"`
+}
+
 type InterfaceBloatSettings struct {
 	Max int `mapstructure:"max"`
 }
@@ -650,8 +660,9 @@ type MalignedSettings struct {
 }
 
 type MisspellSettings struct {
+	Mode   string `mapstructure:"mode"`
 	Locale string
-	// TODO(ldez): v2 the options must be renamed to `IgnoredRules`.
+	// TODO(ldez): v2 the option must be renamed to `IgnoredRules`.
 	IgnoreWords []string `mapstructure:"ignore-words"`
 }
 
@@ -753,6 +764,7 @@ type RowsErrCheckSettings struct {
 }
 
 type SlogLintSettings struct {
+	NoMixedArgs    bool   `mapstructure:"no-mixed-args"`
 	KVOnly         bool   `mapstructure:"kv-only"`
 	AttrOnly       bool   `mapstructure:"attr-only"`
 	ContextOnly    bool   `mapstructure:"context-only"`
@@ -760,6 +772,11 @@ type SlogLintSettings struct {
 	NoRawKeys      bool   `mapstructure:"no-raw-keys"`
 	KeyNamingCase  string `mapstructure:"key-naming-case"`
 	ArgsOnSepLines bool   `mapstructure:"args-on-sep-lines"`
+}
+
+type SpancheckSettings struct {
+	Checks                []string `mapstructure:"checks"`
+	IgnoreCheckSignatures []string `mapstructure:"ignore-check-signatures"`
 }
 
 type StaticCheckSettings struct {

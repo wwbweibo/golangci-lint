@@ -105,6 +105,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		grouperCfg          *config.GrouperSettings
 		ifshortCfg          *config.IfshortSettings
 		importAsCfg         *config.ImportAsSettings
+		inamedparamCfg      *config.INamedParamSettings
 		interfaceBloatCfg   *config.InterfaceBloatSettings
 		ireturnCfg          *config.IreturnSettings
 		lllCfg              *config.LllSettings
@@ -130,6 +131,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		reviveCfg           *config.ReviveSettings
 		rowserrcheckCfg     *config.RowsErrCheckSettings
 		sloglintCfg         *config.SlogLintSettings
+		spancheckCfg        *config.SpancheckSettings
 		staticcheckCfg      *config.StaticCheckSettings
 		structcheckCfg      *config.StructCheckSettings
 		stylecheckCfg       *config.StaticCheckSettings
@@ -189,6 +191,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		grouperCfg = &m.cfg.LintersSettings.Grouper
 		ifshortCfg = &m.cfg.LintersSettings.Ifshort
 		importAsCfg = &m.cfg.LintersSettings.ImportAs
+		inamedparamCfg = &m.cfg.LintersSettings.Inamedparam
 		interfaceBloatCfg = &m.cfg.LintersSettings.InterfaceBloat
 		ireturnCfg = &m.cfg.LintersSettings.Ireturn
 		lllCfg = &m.cfg.LintersSettings.Lll
@@ -214,6 +217,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		reviveCfg = &m.cfg.LintersSettings.Revive
 		rowserrcheckCfg = &m.cfg.LintersSettings.RowsErrCheck
 		sloglintCfg = &m.cfg.LintersSettings.SlogLint
+		spancheckCfg = &m.cfg.LintersSettings.Spancheck
 		staticcheckCfg = &m.cfg.LintersSettings.Staticcheck
 		structcheckCfg = &m.cfg.LintersSettings.Structcheck
 		stylecheckCfg = &m.cfg.LintersSettings.Stylecheck
@@ -584,7 +588,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithLoadForGoAnalysis().
 			WithURL("https://github.com/julz/importas"),
 
-		linter.NewConfig(golinters.NewINamedParam()).
+		linter.NewConfig(golinters.NewINamedParam(inamedparamCfg)).
 			WithSince("v1.55.0").
 			WithPresets(linter.PresetStyle).
 			WithURL("https://github.com/macabu/inamedparam"),
@@ -779,6 +783,12 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithPresets(linter.PresetBugs, linter.PresetSQL).
 			WithLoadForGoAnalysis().
 			WithURL("https://github.com/ryanrolds/sqlclosecheck"),
+
+		linter.NewConfig(golinters.NewSpancheck(spancheckCfg)).
+			WithSince("v1.56.0").
+			WithLoadForGoAnalysis().
+			WithPresets(linter.PresetBugs).
+			WithURL("https://github.com/jjti/go-spancheck"),
 
 		linter.NewConfig(golinters.NewStaticcheck(staticcheckCfg)).
 			WithEnabledByDefault().
