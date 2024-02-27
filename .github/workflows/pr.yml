@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  GO_VERSION: '1.21'
+  GO_VERSION: '1.22'
 
 jobs:
   # Check if there is any dirty change for go mod tidy
@@ -27,6 +27,7 @@ jobs:
         run: |
           go mod tidy
           git diff --exit-code go.mod
+          git diff --exit-code go.sum
 
   # We already run the current golangci-lint in tests, but here we test
   # our GitHub action with the latest stable golangci-lint.
@@ -43,7 +44,7 @@ jobs:
           # - 1.18rc1 -> 1.18.0-rc.1
           go-version: ${{ env.GO_VERSION }}
       - name: lint
-        uses: golangci/golangci-lint-action@v3.7.0
+        uses: golangci/golangci-lint-action@v4.0.0
         with:
           version: latest
           # skip cache because of flaky behaviors
@@ -88,8 +89,8 @@ jobs:
     strategy:
       matrix:
         golang:
-          - '1.20'
           - '1.21'
+          - '1.22'
     steps:
       - uses: actions/checkout@v4
       - name: Install Go
@@ -100,7 +101,7 @@ jobs:
           # - 1.18beta1 -> 1.18.0-beta.1
           # - 1.18rc1 -> 1.18.0-rc.1
           go-version: ${{ matrix.golang }}
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ matrix.golang }}-${{ hashFiles('**/go.sum') }}

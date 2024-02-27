@@ -21,6 +21,12 @@ var defaultLintersSettings = LintersSettings{
 	Dogsled: DogsledSettings{
 		MaxBlankIdentifiers: 2,
 	},
+	Dupl: DuplSettings{
+		Threshold: 150,
+	},
+	Errcheck: ErrcheckSettings{
+		Ignore: "fmt:.*",
+	},
 	ErrorLint: ErrorLintSettings{
 		Errorf:      true,
 		ErrorfMulti: true,
@@ -46,8 +52,19 @@ var defaultLintersSettings = LintersSettings{
 	Gocognit: GocognitSettings{
 		MinComplexity: 30,
 	},
+	Goconst: GoConstSettings{
+		MatchWithConstants:  true,
+		MinStringLen:        3,
+		MinOccurrencesCount: 3,
+		NumberMin:           3,
+		NumberMax:           3,
+		IgnoreCalls:         true,
+	},
 	Gocritic: GoCriticSettings{
 		SettingsPerCheck: map[string]GoCriticCheckSettings{},
+	},
+	Gocyclo: GoCycloSettings{
+		MinComplexity: 30,
 	},
 	Godox: GodoxSettings{
 		Keywords: []string{},
@@ -56,10 +73,16 @@ var defaultLintersSettings = LintersSettings{
 		Scope:  "declarations",
 		Period: true,
 	},
+	Gofmt: GoFmtSettings{
+		Simplify: true,
+	},
 	Gofumpt: GofumptSettings{
 		LangVersion: "",
 		ModulePath:  "",
 		ExtraRules:  false,
+	},
+	Golint: GoLintSettings{
+		MinConfidence: 0.8,
 	},
 	Gosec: GoSecSettings{
 		Concurrency: runtime.NumCPU(),
@@ -112,6 +135,7 @@ var defaultLintersSettings = LintersSettings{
 		ErrError:      false,
 		ErrorF:        true,
 		SprintF1:      true,
+		StrConcat:     true,
 	},
 	Prealloc: PreallocSettings{
 		Simple:     true,
@@ -459,7 +483,9 @@ type GoConstSettings struct {
 
 type GoCriticSettings struct {
 	Go               string                           `mapstructure:"-"`
+	DisableAll       bool                             `mapstructure:"disable-all"`
 	EnabledChecks    []string                         `mapstructure:"enabled-checks"`
+	EnableAll        bool                             `mapstructure:"enable-all"`
 	DisabledChecks   []string                         `mapstructure:"disabled-checks"`
 	EnabledTags      []string                         `mapstructure:"enabled-tags"`
 	DisabledTags     []string                         `mapstructure:"disabled-tags"`
@@ -580,6 +606,7 @@ type GovetSettings struct {
 }
 
 func (cfg *GovetSettings) Validate() error {
+	// TODO(ldez) need to be move into the linter file.
 	if cfg.EnableAll && cfg.DisableAll {
 		return errors.New("enable-all and disable-all can't be combined")
 	}
@@ -660,10 +687,16 @@ type MalignedSettings struct {
 }
 
 type MisspellSettings struct {
-	Mode   string `mapstructure:"mode"`
-	Locale string
+	Mode       string               `mapstructure:"mode"`
+	Locale     string               `mapstructure:"locale"`
+	ExtraWords []MisspellExtraWords `mapstructure:"extra-words"`
 	// TODO(ldez): v2 the option must be renamed to `IgnoredRules`.
 	IgnoreWords []string `mapstructure:"ignore-words"`
+}
+
+type MisspellExtraWords struct {
+	Typo       string `mapstructure:"typo"`
+	Correction string `mapstructure:"correction"`
 }
 
 type MustTagSettings struct {
@@ -702,8 +735,9 @@ type NoNamedReturnsSettings struct {
 }
 
 type ParallelTestSettings struct {
-	IgnoreMissing         bool `mapstructure:"ignore-missing"`
-	IgnoreMissingSubtests bool `mapstructure:"ignore-missing-subtests"`
+	Go                    string `mapstructure:"-"`
+	IgnoreMissing         bool   `mapstructure:"ignore-missing"`
+	IgnoreMissingSubtests bool   `mapstructure:"ignore-missing-subtests"`
 }
 
 type PerfSprintSettings struct {
@@ -711,6 +745,7 @@ type PerfSprintSettings struct {
 	ErrError      bool `mapstructure:"err-error"`
 	ErrorF        bool `mapstructure:"errorf"`
 	SprintF1      bool `mapstructure:"sprintf1"`
+	StrConcat     bool `mapstructure:"strconcat"`
 }
 
 type PreallocSettings struct {
@@ -730,9 +765,10 @@ type PromlinterSettings struct {
 }
 
 type ProtoGetterSettings struct {
-	SkipGeneratedBy  []string `mapstructure:"skip-generated-by"`
-	SkipFiles        []string `mapstructure:"skip-files"`
-	SkipAnyGenerated bool     `mapstructure:"skip-any-generated"`
+	SkipGeneratedBy         []string `mapstructure:"skip-generated-by"`
+	SkipFiles               []string `mapstructure:"skip-files"`
+	SkipAnyGenerated        bool     `mapstructure:"skip-any-generated"`
+	ReplaceFirstArgInAppend bool     `mapstructure:"replace-first-arg-in-append"`
 }
 
 type ReassignSettings struct {
@@ -750,6 +786,7 @@ type ReviveSettings struct {
 		Arguments []any
 		Severity  string
 		Disabled  bool
+		Exclude   []string
 	}
 	ErrorCode   int `mapstructure:"error-code"`
 	WarningCode int `mapstructure:"warning-code"`

@@ -3,11 +3,9 @@ package lintersdb
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"plugin"
 
-	"github.com/spf13/viper"
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/golangci/golangci-lint/pkg/config"
@@ -68,12 +66,7 @@ func (m *Manager) loadCustomLinterConfig(name string, settings config.CustomLint
 func (m *Manager) getAnalyzerPlugin(path string, settings any) ([]*analysis.Analyzer, error) {
 	if !filepath.IsAbs(path) {
 		// resolve non-absolute paths relative to config file's directory
-		configFilePath := viper.ConfigFileUsed()
-		absConfigFilePath, err := filepath.Abs(configFilePath)
-		if err != nil {
-			return nil, fmt.Errorf("could not get absolute representation of config file path %q: %w", configFilePath, err)
-		}
-		path = filepath.Join(filepath.Dir(absConfigFilePath), path)
+		path = filepath.Join(m.cfg.GetConfigDir(), path)
 	}
 
 	plug, err := plugin.Open(path)
@@ -115,11 +108,8 @@ func (m *Manager) lookupAnalyzerPlugin(plug *plugin.Plugin) ([]*analysis.Analyze
 		return nil, err
 	}
 
-	// TODO(ldez): remove this env var (but keep the log) in the next minor version (v1.55.0)
-	if _, ok := os.LookupEnv("GOLANGCI_LINT_HIDE_WARNING_ABOUT_PLUGIN_API_DEPRECATION"); !ok {
-		m.log.Warnf("plugin: 'AnalyzerPlugin' plugins are deprecated, please use the new plugin signature: " +
-			"https://golangci-lint.run/contributing/new-linters/#create-a-plugin")
-	}
+	m.log.Warnf("plugin: 'AnalyzerPlugin' plugins are deprecated, please use the new plugin signature: " +
+		"https://golangci-lint.run/contributing/new-linters/#create-a-plugin")
 
 	analyzerPlugin, ok := symbol.(AnalyzerPlugin)
 	if !ok {

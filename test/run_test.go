@@ -54,20 +54,6 @@ func TestSymlinkLoop(t *testing.T) {
 		ExpectNoIssues()
 }
 
-// TODO(ldez): remove this in v2.
-func TestDeadline(t *testing.T) {
-	projectRoot := filepath.Join("..", "...")
-
-	testshared.NewRunnerBuilder(t).
-		WithArgs("--deadline=1ms").
-		WithTargetPath(projectRoot).
-		Runner().
-		Install().
-		Run().
-		ExpectExitCode(exitcodes.Timeout).
-		ExpectOutputContains(`Timeout exceeded: try increasing it by passing --timeout option`)
-}
-
 func TestTimeout(t *testing.T) {
 	projectRoot := filepath.Join("..", "...")
 
@@ -82,43 +68,21 @@ func TestTimeout(t *testing.T) {
 }
 
 func TestTimeoutInConfig(t *testing.T) {
-	cases := []struct {
-		cfg string
-	}{
-		{
-			cfg: `
-				run:
-					deadline: 1ms
-			`,
-		},
-		{
-			cfg: `
-				run:
-					timeout: 1ms
-			`,
-		},
-		{
-			// timeout should override deadline
-			cfg: `
-				run:
-					deadline: 100s
-					timeout: 1ms
-			`,
-		},
-	}
-
 	testshared.InstallGolangciLint(t)
 
-	for _, c := range cases {
-		// Run with disallowed option set only in config
-		testshared.NewRunnerBuilder(t).
-			WithConfig(c.cfg).
-			WithTargetPath(testdataDir, minimalPkg).
-			Runner().
-			Run().
-			ExpectExitCode(exitcodes.Timeout).
-			ExpectOutputContains(`Timeout exceeded: try increasing it by passing --timeout option`)
-	}
+	cfg := `
+				run:
+					timeout: 1ms
+			`
+
+	// Run with disallowed option set only in config
+	testshared.NewRunnerBuilder(t).
+		WithConfig(cfg).
+		WithTargetPath(testdataDir, minimalPkg).
+		Runner().
+		Run().
+		ExpectExitCode(exitcodes.Timeout).
+		ExpectOutputContains(`Timeout exceeded: try increasing it by passing --timeout option`)
 }
 
 func TestTestsAreLintedByDefault(t *testing.T) {
@@ -133,12 +97,12 @@ func TestTestsAreLintedByDefault(t *testing.T) {
 func TestCgoOk(t *testing.T) {
 	testshared.NewRunnerBuilder(t).
 		WithNoConfig().
-		WithArgs(
-			"--timeout=3m",
+		WithArgs("--timeout=3m",
 			"--enable-all",
 			"-D",
-			"nosnakecase,gci",
+			"nosnakecase",
 		).
+		WithArgs("--go=1.22"). // TODO(ldez) remove this line when we will run go1.23 on the CI. (related to intrange, copyloopvar)
 		WithTargetPath(testdataDir, "cgo").
 		Runner().
 		Install().
@@ -356,6 +320,7 @@ func TestUnsafeOk(t *testing.T) {
 	testshared.NewRunnerBuilder(t).
 		WithNoConfig().
 		WithArgs("--enable-all").
+		WithArgs("--go=1.22"). // TODO(ldez) remove this line when we will run go1.23 on the CI. (related to intrange, copyloopvar)
 		WithTargetPath(testdataDir, "unsafe").
 		Runner().
 		Install().
@@ -514,6 +479,7 @@ func TestEnableAllFastAndEnableCanCoexist(t *testing.T) {
 			testshared.NewRunnerBuilder(t).
 				WithNoConfig().
 				WithArgs(test.args...).
+				WithArgs("--go=1.22"). // TODO(ldez) remove this line when we will run go1.23 on the CI. (related to intrange, copyloopvar)
 				WithTargetPath(testdataDir, minimalPkg).
 				Runner().
 				Run().
@@ -568,86 +534,6 @@ func TestAbsPathFileAnalysis(t *testing.T) {
 		Install().
 		Run().
 		ExpectHasIssue("indent-error-flow: if block ends with a return statement, so drop this else and outdent its block (revive)")
-}
-
-func TestDisallowedOptionsInConfig(t *testing.T) {
-	cases := []struct {
-		cfg    string
-		option string
-	}{
-		{
-			cfg: `
-				ruN:
-					Args:
-						- 1
-			`,
-		},
-		{
-			cfg: `
-				run:
-					CPUProfilePath: path
-			`,
-			option: "--cpu-profile-path=path",
-		},
-		{
-			cfg: `
-				run:
-					MemProfilePath: path
-			`,
-			option: "--mem-profile-path=path",
-		},
-		{
-			cfg: `
-				run:
-					TracePath: path
-			`,
-			option: "--trace-path=path",
-		},
-		{
-			cfg: `
-				run:
-					Verbose: true
-			`,
-			option: "-v",
-		},
-	}
-
-	testshared.InstallGolangciLint(t)
-
-	for _, c := range cases {
-		// Run with disallowed option set only in config
-		testshared.NewRunnerBuilder(t).
-			WithConfig(c.cfg).
-			WithTargetPath(testdataDir, minimalPkg).
-			Runner().
-			Run().
-			ExpectExitCode(exitcodes.Failure)
-
-		if c.option == "" {
-			continue
-		}
-
-		args := []string{c.option, "--fast"}
-
-		// Run with disallowed option set only in command-line
-		testshared.NewRunnerBuilder(t).
-			WithNoConfig().
-			WithArgs(args...).
-			WithTargetPath(testdataDir, minimalPkg).
-			Runner().
-			Run().
-			ExpectExitCode(exitcodes.Success)
-
-		// Run with disallowed option set both in command-line and in config
-
-		testshared.NewRunnerBuilder(t).
-			WithConfig(c.cfg).
-			WithArgs(args...).
-			WithTargetPath(testdataDir, minimalPkg).
-			Runner().
-			Run().
-			ExpectExitCode(exitcodes.Failure)
-	}
 }
 
 func TestPathPrefix(t *testing.T) {
